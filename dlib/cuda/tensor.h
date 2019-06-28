@@ -171,7 +171,7 @@ namespace dlib
         {
             DLIB_CASSERT(idx < (unsigned long long)num_samples());
             DLIB_CASSERT(item.size() == nr()*nc()*k());
-            static_assert((is_same_type<float, typename EXP::type>::value == true),
+            static_assert((is_same_type<value_type, typename EXP::type>::value == true),
                 "To assign a matrix to a tensor the matrix must contain float values");
             set_ptrm(host()+idx*item.size(), item.nr(), item.nc()) += item;
         }
@@ -298,6 +298,8 @@ namespace dlib
     class resizable_tensor : public tensor
     {
     public:
+		 using tensor::pointer;
+
         resizable_tensor(
         )
         {}
@@ -334,12 +336,12 @@ namespace dlib
         resizable_tensor(resizable_tensor&& item) { swap(item); }
         resizable_tensor& operator=(resizable_tensor&& item) { swap(item); return *this; }
 
-        virtual const float* host() const { return data_instance.host(); }
-        virtual float*       host()       { return data_instance.host(); }
-        virtual float*       host_write_only() { return data_instance.host_write_only(); }
-        virtual const float* device() const { return data_instance.device(); }
-        virtual float*       device()       { return data_instance.device(); }
-        virtual float*       device_write_only() { return data_instance.device_write_only(); }
+        virtual const pointer host() const { return (const pointer)data_instance.host(); }
+        virtual pointer       host()       { return data_instance.host(); }
+        virtual pointer       host_write_only() { return data_instance.host_write_only(); }
+        virtual const pointer device() const { return (const pointer)data_instance.device(); }
+        virtual pointer       device()       { return data_instance.device(); }
+        virtual pointer       device_write_only() { return data_instance.device_write_only(); }
 
         virtual const any&   annotation() const { return _annotation; }
         virtual any&         annotation() { return _annotation; }
@@ -501,8 +503,8 @@ namespace dlib
     )
     {
         DLIB_CASSERT(a.size() == b.size());
-        const float* da = a.host();
-        const float* db = b.host();
+        const auto da = a.host();
+        const auto db = b.host();
         double sum = 0;
         for (size_t i = 0; i < a.size(); ++i)
             sum += da[i]*db[i];
@@ -518,6 +520,7 @@ namespace dlib
         ) : data_instance(0), _annotation(0), data_offset(0) {}
 
     public:
+		 using tensor::pointer;
         friend class alias_tensor;
         friend class alias_tensor_const_instance;
 
@@ -534,12 +537,12 @@ namespace dlib
             return *this;
         }
 
-        virtual const float* host() const { return data_instance->host()+data_offset; }
-        virtual float*       host()       { return data_instance->host()+data_offset; }
-        virtual float*       host_write_only()    { return data_instance->host()+data_offset; }
-        virtual const float* device() const { return data_instance->device()+data_offset; }
-        virtual float*       device()       { return data_instance->device()+data_offset; }
-        virtual float*       device_write_only()  { return data_instance->device()+data_offset; }
+        virtual const pointer host() const { return data_instance->host()+data_offset; }
+        virtual pointer       host()       { return data_instance->host()+data_offset; }
+        virtual pointer       host_write_only()    { return data_instance->host()+data_offset; }
+        virtual const pointer device() const { return data_instance->device()+data_offset; }
+        virtual pointer       device()       { return data_instance->device()+data_offset; }
+        virtual pointer       device_write_only()  { return data_instance->device()+data_offset; }
 
         virtual const any&   annotation() const { return *_annotation; }
         virtual any&         annotation() { return *_annotation; }
