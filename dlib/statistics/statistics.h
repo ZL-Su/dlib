@@ -69,7 +69,7 @@ namespace dlib
         }
 
         T mean (
-        ) const
+        ) const noexcept
         {
             if (n != 0)
                 return sum/n;

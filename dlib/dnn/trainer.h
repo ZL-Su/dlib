@@ -46,7 +46,7 @@ namespace dlib
         };
 
         template <typename training_label_type>
-        void swap(dnn_job_t<training_label_type>& a, dnn_job_t<training_label_type>& b)
+        inline void swap(dnn_job_t<training_label_type>& a, dnn_job_t<training_label_type>& b) noexcept
         {
             a.labels.swap(b.labels);
             a.t.swap(b.t);
@@ -417,40 +417,33 @@ namespace dlib
 
             // check if the sync file already exists, if it does we should load it.
             std::ifstream fin(newest_syncfile(), std::ios::binary);
-            if (fin)
-                deserialize(*this, fin);
+            if (fin) deserialize(*this, fin);
         }
 
-        const std::string& get_synchronization_file (
-        )
+        const std::string& get_synchronization_file () noexcept
         {
             return sync_filename;
         }
 
-        double get_average_loss (
-        ) const 
+        double get_average_loss () const noexcept
         { 
             wait_for_thread_to_pause();
             return rs.mean();
         }
 
-        double get_average_test_loss (
-        ) const
+        double get_average_test_loss () const noexcept
         {
             wait_for_thread_to_pause();
             return rs_test.mean();
         }
 
-        void clear_average_loss (
-        )
+        void clear_average_loss () noexcept
         {
             wait_for_thread_to_pause();
             rs.clear();
         }
 
-        void set_learning_rate (
-            double lr
-        )
+        void set_learning_rate (double lr) noexcept
         {
             DLIB_CASSERT(lr > 0);
             wait_for_thread_to_pause();
