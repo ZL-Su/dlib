@@ -36,7 +36,10 @@ namespace dlib
     class tensor
     {
     public:
-
+		 using value_type = float;
+		 using pointer = value_type*;
+		 using iterator = std::add_pointer_t<value_type>;
+		 using const_iterator = std::add_pointer_t<std::add_const_t<value_type>>;;
         tensor (
         ) : 
             m_n(0), m_k(0), m_nr(0), m_nc(0), m_size(0)
@@ -51,8 +54,6 @@ namespace dlib
         long long nc() const { return m_nc; }
         size_t size() const { return m_size; }
 
-        typedef float* iterator;
-        typedef const float* const_iterator;
         iterator       begin()       { return host(); }
         const_iterator begin() const { return host(); }
         iterator       end()         { return host()+size(); }
@@ -63,12 +64,12 @@ namespace dlib
             data().async_copy_to_device();
         }
 
-        virtual const float* host() const = 0;
-        virtual float*       host() = 0; 
-        virtual float*       host_write_only() = 0;
-        virtual const float* device() const = 0;
-        virtual float*       device() = 0;
-        virtual float*       device_write_only() = 0;
+        virtual const pointer host() const = 0;
+        virtual pointer       host() = 0;
+        virtual pointer       host_write_only() = 0;
+        virtual const pointer device() const = 0;
+        virtual pointer       device() = 0;
+        virtual pointer       device_write_only() = 0;
 
         virtual const any&   annotation() const = 0;
         virtual any&         annotation() = 0;
@@ -95,7 +96,7 @@ namespace dlib
             return *this;
         }
 
-        tensor& operator*= (float val)
+        tensor& operator*= (value_type val)
         {
 #ifdef DLIB_USE_CUDA
             cuda::scale_tensor(*this, val);
@@ -108,7 +109,7 @@ namespace dlib
 #endif
         }
         
-        tensor& operator/= (float val)
+        tensor& operator/= (value_type val)
         {
             *this *= 1.0/val;
             return *this;
@@ -131,7 +132,7 @@ namespace dlib
         {
             DLIB_CASSERT(num_samples() == item.nr() &&
                          nr()*nc()*k() == item.nc());
-            static_assert((is_same_type<float, typename EXP::type>::value == true),
+            static_assert((is_same_type<value_type, typename EXP::type>::value == true),
                 "To assign a matrix to a tensor the matrix must contain float values");
             set_ptrm(host(), m_n, m_nr*m_nc*m_k) += item;
             return *this;
@@ -142,7 +143,7 @@ namespace dlib
         {
             DLIB_CASSERT(num_samples() == item.nr() &&
                          nr()*nc()*k() == item.nc());
-            static_assert((is_same_type<float, typename EXP::type>::value == true),
+            static_assert((is_same_type<value_type, typename EXP::type>::value == true),
                 "To assign a matrix to a tensor the matrix must contain float values");
             set_ptrm(host(), m_n, m_nr*m_nc*m_k) -= item;
             return *this;
@@ -156,7 +157,7 @@ namespace dlib
         {
             DLIB_CASSERT(idx < (unsigned long long)num_samples());
             DLIB_CASSERT(item.size() == nr()*nc()*k());
-            static_assert((is_same_type<float, typename EXP::type>::value == true),
+            static_assert((is_same_type<value_type, typename EXP::type>::value == true),
                 "To assign a matrix to a tensor the matrix must contain float values");
             set_ptrm(host()+idx*item.size(), item.nr(), item.nc()) = item;
         }
