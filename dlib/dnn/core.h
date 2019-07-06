@@ -591,7 +591,7 @@ namespace dlib
 
     template <typename LAYER_DETAILS, typename SUBNET>
     class add_layer<LAYER_DETAILS,SUBNET,
-            typename std::enable_if<is_nonloss_layer_type<SUBNET>::value>::type>
+            std::enable_if_t<is_nonloss_layer_type<SUBNET>::value>>
     {
     public:
         typedef LAYER_DETAILS layer_details_type;
@@ -600,8 +600,7 @@ namespace dlib
         const static size_t num_layers = subnet_type::num_layers + 1;
         const static size_t num_computational_layers = subnet_type::num_computational_layers + 1;
 
-        add_layer(
-        ):
+        add_layer():
             subnetwork(new subnet_type()),
             this_layer_setup_called(false),
             gradient_input_is_stale(true),
@@ -641,9 +640,7 @@ namespace dlib
         // Allow copying networks from one to another as long as their corresponding 
         // layers can be constructed from each other.
         template <typename T, typename U, typename E>
-        add_layer(
-            const add_layer<T,U,E>& item
-        ) :
+        add_layer(const add_layer<T,U,E>& item) :
             details(item.layer_details()), 
             subnetwork(new subnet_type(item.subnet())),
             this_layer_setup_called(item.this_layer_setup_called),
@@ -657,10 +654,7 @@ namespace dlib
         }
 
         template <typename ...T>
-        add_layer(
-            const LAYER_DETAILS& layer_det, 
-            T&& ...args
-        ) : 
+        add_layer(const LAYER_DETAILS& layer_det, T&& ...args) : 
             details(layer_det), 
             subnetwork(new subnet_type(std::forward<T>(args)...)),
             this_layer_setup_called(false),
@@ -699,11 +693,9 @@ namespace dlib
 
         template <
             typename ...T,
-            typename = typename std::enable_if<!disable_forwarding_constr<typename std::remove_reference<T>::type...>::value>::type
+            typename = std::enable_if_t<!disable_forwarding_constr<typename std::remove_reference<T>::type...>::value>
             >
-        add_layer(
-            T&& ...args
-        ) : 
+        add_layer(T&& ...args) : 
             subnetwork(new subnet_type(std::forward<T>(args)...)),
             this_layer_setup_called(false),
             gradient_input_is_stale(true),
@@ -714,10 +706,7 @@ namespace dlib
         }
 
         template <typename ...T>
-        add_layer(
-            LAYER_DETAILS&& layer_det, 
-            T&& ...args
-        ) : 
+        add_layer(LAYER_DETAILS&& layer_det, T&& ...args) : 
             details(std::move(layer_det)), 
             subnetwork(new subnet_type(std::forward<T>(args)...)),
             this_layer_setup_called(false),
@@ -729,10 +718,7 @@ namespace dlib
         }
 
         template <typename ...T, typename LD, typename ...U>
-        add_layer(
-            const std::tuple<LD,U...>& layer_det, 
-            T&& ...args
-        ) : 
+        add_layer(const std::tuple<LD,U...>& layer_det, T&& ...args) : 
             details(tuple_head(layer_det)), 
             subnetwork(new subnet_type(tuple_tail(layer_det),std::forward<T>(args)...)),
             this_layer_setup_called(false),
@@ -806,21 +792,17 @@ namespace dlib
         }
 
     private:
-        tensor& private_get_output() const
-        { 
+        tensor& private_get_output() const { 
             if (const_cast<add_layer&>(*this).this_layer_operates_inplace())
                 return subnetwork->private_get_output();
             else
                 return const_cast<resizable_tensor&>(cached_output); 
         }
-        tensor& private_get_gradient_input() 
-        { 
-            if (this_layer_operates_inplace())
-            {
+        tensor& private_get_gradient_input() { 
+            if (this_layer_operates_inplace()) {
                 return subnetwork->private_get_gradient_input();
             }
-            else
-            {
+            else {
                 if (gradient_input_is_stale)
                 {
                     gradient_input_is_stale = false;
@@ -830,8 +812,9 @@ namespace dlib
                 return x_grad; 
             }
         }
-        void disable_output_and_gradient_getters (
-        ) { get_output_and_gradient_input_disabled = true; }
+        inline void disable_output_and_gradient_getters () noexcept { 
+			  get_output_and_gradient_input_disabled = true; 
+		  }
     public:
         const tensor& get_output() const 
         { 
@@ -880,21 +863,18 @@ namespace dlib
             subnetwork->update_parameters(solvers.pop(), learning_rate);
         }
 
-        const tensor& get_parameter_gradient(
-        ) const { return params_grad; }
+        inline const tensor& get_parameter_gradient() const noexcept { return params_grad; }
+        inline tensor& get_parameter_gradient() noexcept { return params_grad; }
 
-        tensor& get_parameter_gradient (
-        ) { return params_grad; }
+        inline const subnet_type& subnet() const noexcept { return *subnetwork; }
+        inline subnet_type& subnet() noexcept { return *subnetwork; }
 
-        const subnet_type& subnet() const { return *subnetwork; }
-        subnet_type& subnet() { return *subnetwork; }
+        inline const layer_details_type& layer_details() const noexcept { return details; } 
+        inline layer_details_type& layer_details() noexcept { return details; } 
 
-        const layer_details_type& layer_details() const { return details; } 
-        layer_details_type& layer_details() { return details; } 
+        unsigned int sample_expansion_factor() const noexcept { return subnet().sample_expansion_factor(); }
 
-        unsigned int sample_expansion_factor() const { return subnet().sample_expansion_factor(); }
-
-        void clean()
+        inline void clean() noexcept
         {
             x_grad.clear();
             cached_output.clear();
@@ -951,17 +931,13 @@ namespace dlib
 
     private:
 
-        bool this_layer_operates_inplace(
-        ) 
-        {
+        inline bool this_layer_operates_inplace() {
             // This layer can run in-place if it's an in-place capable layer and also if
             // the layer it's on top of doesn't need its own output tensor (since in-place
             // layers overwrite that tensor)
             return impl::is_inplace_layer(details, *subnetwork) && !subnetwork->this_layer_requires_forward_output();
         }
-        bool this_layer_requires_forward_output(
-        ) 
-        {
+        inline bool this_layer_requires_forward_output() {
             return impl::backward_requires_forward_output(details, *subnetwork);
         }
 
@@ -1014,20 +990,19 @@ namespace dlib
     class add_layer
     {
     public:
-        typedef LAYER_DETAILS layer_details_type;
-        typedef INPUT_LAYER subnet_type;
-        typedef typename INPUT_LAYER::input_type input_type;
-        const static size_t num_layers = 2;
-        const static size_t num_computational_layers = 1;
+        using layer_details_type = LAYER_DETAILS;
+        using subnet_type = INPUT_LAYER;
+        using input_type = typename INPUT_LAYER::input_type;
+        constexpr static size_t num_layers = 2;
+        constexpr static size_t num_computational_layers = 1;
 
-        add_layer(
-        ): 
-            this_layer_setup_called(false),
-            gradient_input_is_stale(true),
-            get_output_and_gradient_input_disabled(false),
-            _sample_expansion_factor(0)
+        add_layer():
+			  this_layer_setup_called(false),
+           gradient_input_is_stale(true),
+           get_output_and_gradient_input_disabled(false),
+           _sample_expansion_factor(0)
         {}
-
+		  // add_layer<> is movable but not copyable
         add_layer(const add_layer&) = default;
         add_layer(add_layer&& item) : add_layer() { swap(item); }
         add_layer& operator=(const add_layer&) = default;
@@ -1047,9 +1022,7 @@ namespace dlib
         // Allow copying networks from one to another as long as their corresponding 
         // layers can be constructed from each other.
         template <typename T, typename U, typename E>
-        add_layer(
-            const add_layer<T,U,E>& item
-        ):
+        add_layer(const add_layer<T,U,E>& item):
             input_layer(item.subnet()),
             details(item.layer_details()),
             this_layer_setup_called(item.this_layer_setup_called),
@@ -1062,9 +1035,7 @@ namespace dlib
         {
         }
 
-        add_layer(
-            const LAYER_DETAILS& layer_det
-        ) : 
+        add_layer(const layer_details_type& layer_det) :
             details(layer_det), 
             this_layer_setup_called(false),
             gradient_input_is_stale(true),
@@ -1072,9 +1043,7 @@ namespace dlib
             _sample_expansion_factor(0)
         {}
 
-        add_layer(
-            const INPUT_LAYER& il 
-        ) : 
+        add_layer(const subnet_type& il) :
             input_layer(il), 
             this_layer_setup_called(false),
             gradient_input_is_stale(true),
@@ -1082,9 +1051,7 @@ namespace dlib
             _sample_expansion_factor(0)
         {}
 
-        add_layer(
-            LAYER_DETAILS&& layer_det
-        ) : 
+        add_layer(layer_details_type&& layer_det) :
             details(std::move(layer_det)), 
             this_layer_setup_called(false),
             gradient_input_is_stale(true),
@@ -1092,10 +1059,7 @@ namespace dlib
             _sample_expansion_factor(0)
         {}
 
-        add_layer(
-            LAYER_DETAILS layer_det, 
-            INPUT_LAYER il
-        ) : 
+        add_layer(layer_details_type layer_det, subnet_type il) :
             details(std::move(layer_det)),
             input_layer(std::move(il)),
             this_layer_setup_called(false),
@@ -1106,27 +1070,27 @@ namespace dlib
 
         add_layer(
             std::tuple<>,
-            const LAYER_DETAILS& layer_det
+            const layer_details_type& layer_det
         ) : add_layer(layer_det) {}
 
         add_layer(
             std::tuple<>,
-            LAYER_DETAILS&& layer_det
+			  layer_details_type&& layer_det
         ) : add_layer(layer_det) {}
 
         add_layer(
             std::tuple<>,
-            LAYER_DETAILS layer_det, 
-            INPUT_LAYER il
+			  layer_details_type layer_det,
+			  subnet_type il
         ) : add_layer(layer_det,il) {}
 
         add_layer(
-            const std::tuple<LAYER_DETAILS>& layer_det
+            const std::tuple<layer_details_type>& layer_det
         ) : add_layer(tuple_head(layer_det)) {}
 
         add_layer(
-            const std::tuple<LAYER_DETAILS>& layer_det,
-            INPUT_LAYER il
+            const std::tuple<layer_details_type>& layer_det,
+			  subnet_type il
         ) : add_layer(tuple_head(layer_det),il) {}
 
         template <typename forward_iterator>
