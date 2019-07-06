@@ -15,9 +15,7 @@ namespace dlib
 
 // ----------------------------------------------------------------------------------------
 
-    template <
-        typename T
-        >
+    template<typename T>
     class running_stats
     {
     public:

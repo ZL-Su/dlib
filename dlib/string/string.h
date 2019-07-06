@@ -227,19 +227,18 @@ namespace dlib
         cast_to_string_error():error(ECAST_TO_STRING) {}
     };
 
-    template <
-        typename T
-        >
-    const std::string cast_to_string (
-        const T& item 
-    )
-    {
+    template<typename T>
+    const std::string cast_to_string(const T& item) {
         std::ostringstream sout;
         sout << item;
         if (!sout)
             throw cast_to_string_error();
         return sout.str();
     }
+	 template<typename T, std::enable_if_t<std::is_scalar_v<T>>>
+	 inline const std::string cast_to_string(T value) noexcept {
+		 return (std::to_string(value));
+	 }
 
     // don't declare this if we are using mingw because it apparently doesn't
     // support iostreams with wchar_t?
