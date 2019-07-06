@@ -300,23 +300,16 @@ namespace dlib
     public:
 		 using tensor::pointer;
 
-        resizable_tensor(
-        )
-        {}
+        inline resizable_tensor() noexcept {
+		  }
 
         template <typename EXP>
-        resizable_tensor(
-            const matrix_exp<EXP>& item
-        )
-        {
+        resizable_tensor(const matrix_exp<EXP>& item) {
             set_size(item.nr(), item.nc());
             *this = item;
         }
 
-        explicit resizable_tensor(
-            long long n_, long long k_ = 1, long long nr_ = 1, long long nc_ = 1
-        ) 
-        {
+        explicit resizable_tensor(long long n_, long long k_ = 1, long long nr_ = 1, long long nc_ = 1){
             DLIB_ASSERT( n_ >= 0 && k_ >= 0 && nr_ >= 0 && nc_ >= 0);
 
             set_size(n_,k_,nr_,nc_);
